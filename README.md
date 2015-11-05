@@ -6,3 +6,6 @@
 - Unity5から仕様が変更されて、グーグル先生が頼りにからなくなったゾ
 - 物体の色変更は [ここ](https://gist.github.com/Lacty/7bae999e1030ef7c2039)を参考にするんだゾ
     - Materialを作成したことを忘れるんじゃないゾ
+
+- Visual Studioで複数行のコードを関数化する方法
+    - 選択してからcontroll + R, M

@@ -16,6 +16,18 @@ public class OthelloTableView : MonoBehaviour
     }
 
     [SerializeField]
+    private GameObject _stone = null;
+    public GameObject Stone
+    {
+        get
+        {
+            if (_stone != null) { return _stone; }
+            _stone = Resources.Load<GameObject>("Stone/Stone");
+            return _stone;
+        }
+    }
+
+    [SerializeField]
     private Material _normalMaterial = null;
     public Material NormalMaterial
     {
@@ -42,6 +54,7 @@ public class OthelloTableView : MonoBehaviour
     private const int Rows = 8;
     private const int Columns = 8;
     private readonly GameObject[,] _cells = new GameObject[Rows, Columns];
+    private readonly GameObject[,] _stones = new GameObject[Rows, Columns];
 
     void Start()
     {
@@ -52,16 +65,30 @@ public class OthelloTableView : MonoBehaviour
                 _cells[r, c] = CreateCell(r, c);
             }
         }
+        UpdateCellState(3, 3, CellState.Black);
+        UpdateCellState(3, 4, CellState.White);
+        UpdateCellState(4, 3, CellState.White);
+        UpdateCellState(4, 4, CellState.Black);
+
+
         UpdateSelectedCell(0, 0);
     }
 
+    private GameObject CreateGameObject(GameObject origin, int r, int c)
+    {
+        var gameObject = Instantiate(origin);
+        gameObject.name = origin.name + "(" + r + "," + c + ")";
+        gameObject.transform.Translate(1.05F * c, 0, -1.05F * r);
+        gameObject.transform.parent = base.gameObject.transform;
+        return gameObject;
+    }
     private GameObject CreateCell(int r, int c)
     {
-        var cell = Instantiate(Cell);
-        cell.name = Cell.name + "(" + r + "," + c + ")";
-        cell.transform.Translate(1.05F * c, 0, -1.05F * r);
-        cell.transform.parent = gameObject.transform;
-        return cell;
+        return CreateGameObject(Cell, r, c);
+    }
+    private GameObject CreateStone(int r, int c)
+    {
+        return CreateGameObject(Stone, r, c);
     }
 
     private int _selectedRow = 0;
@@ -76,6 +103,7 @@ public class OthelloTableView : MonoBehaviour
         }
     }
     private int _selectedColumn = 0;
+
     public int SelectedColumn
     {
         get { return _selectedColumn; }
@@ -91,6 +119,17 @@ public class OthelloTableView : MonoBehaviour
     {
         get { return _cells[SelectedRow, SelectedColumn]; }
     }
+    
+    private Player _currentPlayer = Player.Black;
+
+    private Player GetOtherPlayer(Player player)
+    {
+        return player == Player.Black ? Player.White : Player.Black;
+    }
+    private CellState ToCellState(Player player)
+    {
+        return player == Player.Black ? CellState.Black : CellState.White;
+    }
 
     private void Update()
     {
@@ -102,17 +141,43 @@ public class OthelloTableView : MonoBehaviour
             { UpdateSelectedCell(SelectedRow, SelectedColumn - 1); }
         if (Input.GetKeyDown(KeyCode.RightArrow))
             { UpdateSelectedCell(SelectedRow, SelectedColumn + 1); }
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            var stone = _stones[SelectedRow, SelectedColumn];
+            if (stone == null)
+            {
+                UpdateCellState(
+                    SelectedRow, SelectedColumn,
+                    ToCellState(_currentPlayer));
+                _currentPlayer = GetOtherPlayer(_currentPlayer);
+            }
+        }
+    }
+
+    private void UpdateCellState(int row, int column, CellState cellState)
+    {
+        var stone = _stones[row, column];
+        if (stone != null && cellState == CellState.None)
+        {
+            Destroy(stone);
+            return;
+        }
+        if (stone == null)
+        {
+            stone = CreateStone(row, column);
+            _stones[row, column] = stone;
+        }
+        stone.transform.rotation =
+            cellState == CellState.Black
+                ? Quaternion.identity
+                : Quaternion.Euler(180, 0, 0);
     }
 
     private void UpdateSelectedCell(int row, int column)
     {
-        SelectedCell.GetComponent<Renderer>()
-            .material = NormalMaterial;
-
+        SelectedCell.GetComponent<Renderer>().material = NormalMaterial;
         SelectedRow = row;
         SelectedColumn = column;
-
-        SelectedCell.GetComponent<Renderer>()
-            .material = SelectedMaterial;
+        SelectedCell.GetComponent<Renderer>().material = SelectedMaterial;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System;
+using System.Collections.Generic;
 
 public class OthelloTableView : MonoBehaviour
 {
@@ -171,13 +172,45 @@ public class OthelloTableView : MonoBehaviour
         {
             if (IsPlaceable(SelectedRow, SelectedColumn, _currentPlayer))
             {
-                UpdateCellState(
-                    SelectedRow, SelectedColumn,
-                    ToCellState(_currentPlayer));
+                Place(SelectedRow, SelectedColumn,_currentPlayer);
                 _currentPlayer = GetOtherPlayer(_currentPlayer);
                 UpdatePlaceableCells();
             }
         }
+    }
+
+    private void Place(int row, int column, Player player)
+    {
+        var cellPositions = GetReversibleCellPositions(row, column, player);
+
+        var pc = ToCellState(player);
+        foreach (var pt in cellPositions)
+        {
+            UpdateCellState(pt.Row, pt.Column, pc);
+        }
+        UpdateCellState(row, column, pc);
+    }
+
+    private IEnumerable<CellPosition> GetReversibleCellPositions(int row, int column, Player player)
+    {
+        var state = GetCellState(row, column);
+        if (state != CellState.None) { return new CellPosition[0]; }
+
+        var list = new List<CellPosition>();
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, -1, -1, player)); //左上
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, -1, 0, player)); //上
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, -1, 1, player)); //右上
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, 0, -1, player)); //左
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, 0, 1, player)); //右
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, 1, -1, player)); //左下
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, 1, 0, player)); //下
+        list.AddRange(GetReversibleCellPositionsByDirection(row, column, 1, 1, player)); //右;
+        return list; 
+    }
+    private IEnumerable<CellPosition> GetReversibleCellPositionsByDirection(int row, int column, int dr, int dc, Player player)
+    {
+        // TODO: 指定方向の回転可能な石のセル座標を返す。
+        return new CellPosition[0];
     }
 
     private bool IsPlaceable(int row, int column, Player player)
@@ -258,6 +291,4 @@ public class OthelloTableView : MonoBehaviour
         SelectedColumn = column;
         SelectedCell.GetComponent<Renderer>().material = SelectedMaterial;
     }
-
-
 }
